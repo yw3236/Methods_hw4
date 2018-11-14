@@ -1,0 +1,97 @@
+---
+title: "Methods_hw4"
+output: github_document
+author: "Yishan Wang"
+date: "2018-11-12"
+---
+
+# Problem 2
+
+```{r include = FALSE}
+library(tidyverse)
+library(Hmisc)
+```
+
+```{r}
+heartdisease_data = read_csv("./data/HeartDisease.csv")
+```
+
+### a)
+
+#### Description of the Data Set
+
+The main outcome is `totalcost` of patients diagnosed with heart disease. The main predictor is `ERvisits`, which is number of emergency room visits. Other important covariates are `age`, `gender`, `complications` and `duration`. `interventions`, `drugs` and `comorbidities` are potential covariates.
+
+#### Descriptive Statistics for all Variables of Interest
+
+##### Descriptive statistics for continous variables of interest:
+
+```{r}
+heartdisease_data %>%
+  select(totalcost, ERvisits, age, complications, duration) %>%
+  summary()
+```
+
+##### Descriptive statistics for categorical variable of interest:
+
+```{r}
+table(factor(heartdisease_data$gender, levels = c(0,1), labels = c('Male','Female'))) %>%
+  addmargins()
+```
+
+### b)
+
+#### Plot the distribution for variable `totalcost`:
+
+```{r}
+hist(heartdisease_data$totalcost, main = "Total Cost Distribution", xlab = "Total Cost ($)", col.main = "red", col.lab = "blue")
+```
+
+#### Use log transformation:
+
+```{r}
+hist(log(heartdisease_data$totalcost), main = "Total Cost Distribution", xlab = "Total Cost ($)", col.main = "red", col.lab = "blue")
+```
+
+### c)
+
+#### Create a new variable called `comp_bin` by dichotomizing `complications`: 0 if no complications, and 1 otherwise.
+
+```{r}
+new_heartdisease_data = heartdisease_data %>%
+  mutate(comp_bin = ifelse(complications == 0, 0, 1))
+```
+
+### d)
+
+#### Fit a simple linear regression between the original `totalcost` and predictor `ERvisits`.
+
+```{r}
+ggplot(heartdisease_data, aes(x = ERvisits, y = totalcost)) +
+  geom_point() +
+  geom_smooth(method = 'lm',formula = y~x)
+
+reg_original = lm(totalcost ~ ERvisits, heartdisease_data)
+summary(reg_original)
+```
+
+##### Comments on significance and interpretation of the slope: 
+
+
+#### Fit a simple linear regression between the transformed `totalcost` and predictor `ERvisits`.
+
+```{r}
+trans_heartdisease_data = heartdisease_data %>%
+  filter(totalcost != 0) %>%
+  mutate(trans_totalcost = log(totalcost)) 
+
+ggplot(trans_heartdisease_data, aes(x = ERvisits, y = trans_totalcost)) +
+  geom_point() +
+  geom_smooth(method = 'lm', formula = y~x)
+
+reg_trans = lm(trans_totalcost ~ ERvisits, trans_heartdisease_data)
+summary(reg_trans)
+```
+
+##### Comments on significance and interpretation of the slope: 
+

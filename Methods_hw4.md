@@ -55,10 +55,10 @@ heartdisease_data %>%
     ##  3rd Qu.:281.00  
     ##  Max.   :372.00
 
-##### Descriptive statistics for categorical variable of interest:
+?dplyr::select \#\#\#\#\# Descriptive statistics for categorical variable of interest:
 
 ``` r
-table(factor(heartdisease_data$gender, levels = c(0,1), labels = c('Male','Female'))) %>%
+table(factor(heartdisease_data$gender, levels = c(0, 1), labels = c('Male', 'Female'))) %>%
   addmargins()
 ```
 
@@ -90,7 +90,8 @@ hist(log(heartdisease_data$totalcost), main = "Total Cost Distribution", xlab = 
 
 ``` r
 new_heartdisease_data = heartdisease_data %>%
-  mutate(comp_bin = ifelse(complications == 0, 0, 1))
+  mutate(comp_bin = as.factor(ifelse(complications == 0, 0, 1))) %>%
+  mutate(gender = as.factor(gender))
 ```
 
 ### d)
@@ -106,8 +107,8 @@ ggplot(heartdisease_data, aes(x = ERvisits, y = totalcost)) +
 ![](Methods_hw4_files/figure-markdown_github/unnamed-chunk-8-1.png)
 
 ``` r
-reg_original = lm(totalcost ~ ERvisits, heartdisease_data)
-summary(reg_original)
+reg_original_slr = lm(totalcost ~ ERvisits, heartdisease_data)
+summary(reg_original_slr)
 ```
 
     ## 
@@ -146,8 +147,8 @@ ggplot(trans_heartdisease_data, aes(x = ERvisits, y = trans_totalcost)) +
 ![](Methods_hw4_files/figure-markdown_github/unnamed-chunk-9-1.png)
 
 ``` r
-reg_trans = lm(trans_totalcost ~ ERvisits, trans_heartdisease_data)
-summary(reg_trans)
+reg_trans_slr = lm(trans_totalcost ~ ERvisits, trans_heartdisease_data)
+summary(reg_trans_slr)
 ```
 
     ## 
@@ -170,3 +171,228 @@ summary(reg_trans)
     ## F-statistic:  89.5 on 1 and 783 DF,  p-value: < 2.2e-16
 
 ##### Comments on significance and interpretation of the slope:
+
+### c)
+
+#### Fit a multiple linear regression with `comp_bin` and `ERvisits` as predictors.
+
+``` r
+reg_original_mlr = lm(totalcost ~ ERvisits + comp_bin, new_heartdisease_data)
+summary(reg_original_mlr)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = totalcost ~ ERvisits + comp_bin, data = new_heartdisease_data)
+    ## 
+    ## Residuals:
+    ##    Min     1Q Median     3Q    Max 
+    ## -14631  -2183   -993    218  42351 
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)  -511.90     358.65  -1.427    0.154    
+    ## ERvisits      902.26      83.93  10.750  < 2e-16 ***
+    ## comp_bin1    4058.94     973.98   4.167 3.42e-05 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 6138 on 785 degrees of freedom
+    ## Multiple R-squared:  0.1604, Adjusted R-squared:  0.1583 
+    ## F-statistic: 75.01 on 2 and 785 DF,  p-value: < 2.2e-16
+
+##### I)
+
+##### Test if `comp_bin` is an effect modifier of the relationship between `totalcost` and `ERvisits`.
+
+``` r
+reg_interaction = lm(totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, new_heartdisease_data)
+summary(reg_interaction)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, 
+    ##     data = new_heartdisease_data)
+    ## 
+    ## Residuals:
+    ##    Min     1Q Median     3Q    Max 
+    ## -14938  -2177   -977    256  42338 
+    ## 
+    ## Coefficients:
+    ##                    Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)          -573.2      366.4  -1.564  0.11814    
+    ## ERvisits              920.7       86.9  10.594  < 2e-16 ***
+    ## comp_bin1            5430.0     1935.0   2.806  0.00514 ** 
+    ## ERvisits:comp_bin1   -275.6      336.1  -0.820  0.41243    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 6139 on 784 degrees of freedom
+    ## Multiple R-squared:  0.1612, Adjusted R-squared:  0.158 
+    ## F-statistic: 50.21 on 3 and 784 DF,  p-value: < 2.2e-16
+
+##### Comment
+
+##### II)
+
+##### Test if `comp_bin` is a confounder of the relationship between `totalcost` and `ERvisits`.
+
+##### Comment
+
+##### III)
+
+### f)
+
+##### I)
+
+##### Use the model in part e) and add additional covariates and fit MLR.
+
+``` r
+full_model = lm(totalcost ~ ERvisits + comp_bin + age + gender + duration, new_heartdisease_data)
+summary(full_model)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = totalcost ~ ERvisits + comp_bin + age + gender + 
+    ##     duration, data = new_heartdisease_data)
+    ## 
+    ## Residuals:
+    ##    Min     1Q Median     3Q    Max 
+    ## -13262  -2391   -977    591  40793 
+    ## 
+    ## Coefficients:
+    ##              Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)  4104.112   1903.052   2.157 0.031341 *  
+    ## ERvisits      892.281     84.166  10.601  < 2e-16 ***
+    ## comp_bin1    3708.979    963.774   3.848 0.000129 ***
+    ## age           -93.729     32.343  -2.898 0.003861 ** 
+    ## gender1     -1022.046    517.144  -1.976 0.048469 *  
+    ## duration        7.159      1.823   3.928 9.33e-05 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 6055 on 782 degrees of freedom
+    ## Multiple R-squared:  0.1862, Adjusted R-squared:  0.181 
+    ## F-statistic: 35.78 on 5 and 782 DF,  p-value: < 2.2e-16
+
+##### Comment
+
+##### II)
+
+``` r
+anova(reg_original_slr, full_model)
+```
+
+    ## Analysis of Variance Table
+    ## 
+    ## Model 1: totalcost ~ ERvisits
+    ## Model 2: totalcost ~ ERvisits + comp_bin + age + gender + duration
+    ##   Res.Df        RSS Df  Sum of Sq      F    Pr(>F)    
+    ## 1    786 3.0228e+10                                   
+    ## 2    782 2.8668e+10  4 1560105852 10.639 2.127e-08 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Problem 3
+=========
+
+``` r
+patsatisfaction_data = readxl::read_excel("./data/PatSatisfaction.xlsx") %>%
+  janitor::clean_names()
+```
+
+### a)
+
+#### Create a correlation matrix
+
+``` r
+Hmisc::rcorr(as.matrix(patsatisfaction_data))
+```
+
+    ##              safisfaction   age severity anxiety
+    ## safisfaction         1.00 -0.79    -0.60   -0.64
+    ## age                 -0.79  1.00     0.57    0.57
+    ## severity            -0.60  0.57     1.00    0.67
+    ## anxiety             -0.64  0.57     0.67    1.00
+    ## 
+    ## n= 46 
+    ## 
+    ## 
+    ## P
+    ##              safisfaction age severity anxiety
+    ## safisfaction               0   0        0     
+    ## age           0                0        0     
+    ## severity      0            0            0     
+    ## anxiety       0            0   0
+
+##### Initial Findings
+
+### b)
+
+##### Fit a multiple regression model and test whether there is a regression relation and test whether there is a regression relation.
+
+``` r
+reg_mlr = lm(safisfaction ~ age + severity + anxiety, patsatisfaction_data)
+summary(reg_mlr)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = safisfaction ~ age + severity + anxiety, data = patsatisfaction_data)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -18.3524  -6.4230   0.5196   8.3715  17.1601 
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept) 158.4913    18.1259   8.744 5.26e-11 ***
+    ## age          -1.1416     0.2148  -5.315 3.81e-06 ***
+    ## severity     -0.4420     0.4920  -0.898   0.3741    
+    ## anxiety     -13.4702     7.0997  -1.897   0.0647 .  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 10.06 on 42 degrees of freedom
+    ## Multiple R-squared:  0.6822, Adjusted R-squared:  0.6595 
+    ## F-statistic: 30.05 on 3 and 42 DF,  p-value: 1.542e-10
+
+##### State the hypotheses, decision rule and conclusion.
+
+### c)
+
+``` r
+confint(reg_mlr, level = 0.95)
+```
+
+    ##                  2.5 %      97.5 %
+    ## (Intercept) 121.911727 195.0707761
+    ## age          -1.575093  -0.7081303
+    ## severity     -1.434831   0.5508228
+    ## anxiety     -27.797859   0.8575324
+
+##### Interpret the coefficient and 95% CI associated with `severity`.
+
+### d)
+
+##### Obtain an interval estimate for a new patient’s satisfaction when Age = 35, Severity = 42, Anxiety = 2.1.
+
+``` r
+mean_Y_hat = function(dataset, x, y, n, conf.level = 0.95){
+
+  reg = lm(y ~ x)
+  
+#Get the number of observations n
+  n = dim(dataset)[1]
+  
+  Upper_limit = reg$coefficients[1] + reg$coefficients[2]*x +
+    qt(0.5*(1 + conf.level), n - 2) * sqrt(sigma(reg)^2*(1/n + (x - mean(x))^2/sum((x - mean(x))^2)))
+  Lower_limit = reg$coefficients[1] + reg$coefficients[2]*x -
+    qt(0.5*(1 + conf.level), n - 2) * sqrt(sigma(reg)^2*(1/n + (x - mean(x))^2/sum((x - mean(x))^2)))
+  list(Upper_limit, LL = Lower_limit)
+}
+```
+
+?dim

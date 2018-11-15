@@ -9,7 +9,6 @@ date: "2018-11-12"
 
 ```{r include = FALSE}
 library(tidyverse)
-library(Hmisc)
 ```
 
 ```{r}
@@ -31,11 +30,11 @@ heartdisease_data %>%
   select(totalcost, ERvisits, age, complications, duration) %>%
   summary()
 ```
-
+?dplyr::select
 ##### Descriptive statistics for categorical variable of interest:
 
 ```{r}
-table(factor(heartdisease_data$gender, levels = c(0,1), labels = c('Male','Female'))) %>%
+table(factor(heartdisease_data$gender, levels = c(0, 1), labels = c('Male', 'Female'))) %>%
   addmargins()
 ```
 
@@ -59,7 +58,8 @@ hist(log(heartdisease_data$totalcost), main = "Total Cost Distribution", xlab = 
 
 ```{r}
 new_heartdisease_data = heartdisease_data %>%
-  mutate(comp_bin = ifelse(complications == 0, 0, 1))
+  mutate(comp_bin = as.factor(ifelse(complications == 0, 0, 1))) %>%
+  mutate(gender = as.factor(gender))
 ```
 
 ### d)
@@ -71,8 +71,8 @@ ggplot(heartdisease_data, aes(x = ERvisits, y = totalcost)) +
   geom_point() +
   geom_smooth(method = 'lm',formula = y~x)
 
-reg_original = lm(totalcost ~ ERvisits, heartdisease_data)
-summary(reg_original)
+reg_original_slr = lm(totalcost ~ ERvisits, heartdisease_data)
+summary(reg_original_slr)
 ```
 
 ##### Comments on significance and interpretation of the slope: 
@@ -89,9 +89,119 @@ ggplot(trans_heartdisease_data, aes(x = ERvisits, y = trans_totalcost)) +
   geom_point() +
   geom_smooth(method = 'lm', formula = y~x)
 
-reg_trans = lm(trans_totalcost ~ ERvisits, trans_heartdisease_data)
-summary(reg_trans)
+reg_trans_slr = lm(trans_totalcost ~ ERvisits, trans_heartdisease_data)
+summary(reg_trans_slr)
 ```
 
 ##### Comments on significance and interpretation of the slope: 
+
+### c)
+
+#### Fit a multiple linear regression with `comp_bin` and `ERvisits` as predictors.
+
+```{r}
+reg_original_mlr = lm(totalcost ~ ERvisits + comp_bin, new_heartdisease_data)
+summary(reg_original_mlr)
+```
+
+##### I)
+
+##### Test if `comp_bin` is an effect modifier of the relationship between `totalcost` and `ERvisits`. 
+
+```{r}
+reg_interaction = lm(totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, new_heartdisease_data)
+summary(reg_interaction)
+```
+
+##### Comment
+
+##### II)
+
+##### Test if `comp_bin` is a confounder of the relationship between `totalcost` and `ERvisits`. 
+
+```{r}
+
+```
+
+##### Comment
+
+##### III)
+
+### f)
+
+##### I)
+
+#####  Use the model in part e) and add additional covariates and fit MLR.
+
+```{r}
+full_model = lm(totalcost ~ ERvisits + comp_bin + age + gender + duration, new_heartdisease_data)
+summary(full_model)
+```
+
+##### Comment
+
+##### II)
+
+```{r}
+anova(reg_original_slr, full_model)
+```
+
+# Problem 3
+
+```{r}
+patsatisfaction_data = readxl::read_excel("./data/PatSatisfaction.xlsx") %>%
+  janitor::clean_names()
+```
+
+### a)
+
+#### Create a correlation matrix
+
+```{r}
+Hmisc::rcorr(as.matrix(patsatisfaction_data))
+```
+
+##### Initial Findings
+
+### b)
+
+##### Fit a multiple regression model and test whether there is a regression relation and test whether there is a regression relation.
+
+```{r}
+reg_mlr = lm(safisfaction ~ age + severity + anxiety, patsatisfaction_data)
+summary(reg_mlr)
+```
+
+##### State the hypotheses, decision rule and conclusion.
+
+
+### c)
+
+```{r}
+confint(reg_mlr, level = 0.95)
+```
+
+##### Interpret the coefficient and 95% CI associated with `severity`.
+
+### d)
+
+##### Obtain an interval estimate for a new patient’s satisfaction when Age = 35, Severity = 42, Anxiety = 2.1. 
+
+```{r}
+mean_Y_hat = function(dataset, x, y, n, conf.level = 0.95){
+
+  reg = lm(y ~ x)
+  
+#Get the number of observations n
+  n = dim(dataset)[1]
+  
+  Upper_limit = reg$coefficients[1] + reg$coefficients[2]*x +
+    qt(0.5*(1 + conf.level), n - 2) * sqrt(sigma(reg)^2*(1/n + (x - mean(x))^2/sum((x - mean(x))^2)))
+  Lower_limit = reg$coefficients[1] + reg$coefficients[2]*x -
+    qt(0.5*(1 + conf.level), n - 2) * sqrt(sigma(reg)^2*(1/n + (x - mean(x))^2/sum((x - mean(x))^2)))
+  list(Upper_limit, LL = Lower_limit)
+}
+```
+
+?dim
 

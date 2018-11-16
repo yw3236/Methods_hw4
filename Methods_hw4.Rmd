@@ -215,23 +215,13 @@ confint(reg_mlr, level = 0.95) %>%
 ##### Obtain an interval estimate for a new patient’s satisfaction when Age = 35, Severity = 42, Anxiety = 2.1. 
 
 ```{r}
-mean_Y_hat = function(dataset, x, y, n, conf.level = 0.95){
-
-  reg = lm(y ~ x)
-  
-#Get the number of observations n
-  n = dim(dataset)[1]
-  
-  Upper_limit = reg$coefficients[1] + reg$coefficients[2]*x +
-    qt(0.5*(1 + conf.level), n - 2) * sqrt(sigma(reg)^2*(1/n + (x - mean(x))^2/sum((x - mean(x))^2)))
-  Lower_limit = reg$coefficients[1] + reg$coefficients[2]*x -
-    qt(0.5*(1 + conf.level), n - 2) * sqrt(sigma(reg)^2*(1/n + (x - mean(x))^2/sum((x - mean(x))^2)))
-  list(Upper_limit, LL = Lower_limit)
-}
+input_data = data.frame(age = 35, severity = 42, anxiety = 2.1)
+predict(reg_mlr, input_data, interval = "predict")
 ```
 
 ##### Interpret
 
+We are 95% confident that the next new satisfaction observation with age = 35, severity = 42, and anxiety = 2.1 is between 50 and 93. 
 
 ### e)
 

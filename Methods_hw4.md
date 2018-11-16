@@ -55,7 +55,7 @@ heartdisease_data %>%
     ##  3rd Qu.:281.00  
     ##  Max.   :372.00
 
-?dplyr::select \#\#\#\#\# Descriptive statistics for categorical variable of interest:
+##### Descriptive statistics for categorical variable of interest:
 
 ``` r
 table(factor(heartdisease_data$gender, levels = c(0, 1), labels = c('Male', 'Female'))) %>%
@@ -327,7 +327,19 @@ Hmisc::rcorr(as.matrix(patsatisfaction_data))
     ## severity      0            0            0     
     ## anxiety       0            0   0
 
+``` r
+pairs(patsatisfaction_data)
+```
+
+![](Methods_hw4_files/figure-markdown_github/unnamed-chunk-16-1.png)
+
 ##### Initial Findings
+
+-   Satisfaction and age have the strong negative association. Satisfication has the moderately strong negative association with both severity and anxiety.
+
+-   Anxiety and severity have the moderately strong positive association, we might want to check **collinearity** later.
+
+-   Severity and age have the moderately strong positive association, which is the same as the association between anxiety and age.
 
 ### b)
 
@@ -361,19 +373,41 @@ summary(reg_mlr)
 
 ##### State the hypotheses, decision rule and conclusion.
 
+Ho: beta\_age = beta\_severity = beta\_anxiety = 0
+
+Ha: at least one beta is not 0
+
+If the p-value is less than 0.05, we reject Ho and conclude that at least one beta is not 0 and there is a regression relation. If not, we do not reject Ho and conclude that beta\_age = beta\_severity = beta\_anxiety = 0 and there is not a regression relation.
+
+Since p-value is far less than 0.05, we reject Ho and conclude that at least one beta is not 0 and there is a regression relation.
+
 ### c)
 
 ``` r
-confint(reg_mlr, level = 0.95)
+confint(reg_mlr, level = 0.95) %>%
+  knitr::kable(digits = 1)
 ```
 
-    ##                  2.5 %      97.5 %
-    ## (Intercept) 121.911727 195.0707761
-    ## age          -1.575093  -0.7081303
-    ## severity     -1.434831   0.5508228
-    ## anxiety     -27.797859   0.8575324
+|             |  2.5 %|  97.5 %|
+|-------------|------:|-------:|
+| (Intercept) |  121.9|   195.1|
+| age         |   -1.6|    -0.7|
+| severity    |   -1.4|     0.6|
+| anxiety     |  -27.8|     0.9|
+
+-   The 95% CI for beta\_0 is (121.9, 195.1).
+
+-   The 95% CI for beta\_age is (-1.6, -0.7).
+
+-   The 95% CI for beta\_severity is (-1.4, 0.6).
+
+-   The 95% CI for beta\_anxiety is (-27.8, 0.9).
 
 ##### Interpret the coefficient and 95% CI associated with `severity`.
+
+-   The coefficient of `severity`: satisfaction will decrease by 0.442 units on average if severity increases by 1 unit adjusting age and anxiety constant.
+
+-   We are 95% confident that satisfaction will differ between -1.4 units and 0.6 units on average if severity increases by 1 unit adjusting age and anxiety constant.
 
 ### d)
 
@@ -395,4 +429,57 @@ mean_Y_hat = function(dataset, x, y, n, conf.level = 0.95){
 }
 ```
 
-?dim
+##### Interpret
+
+### e)
+
+##### Test whether `anxiety` can be dropped from the regression model, given the other two covariates are retained.
+
+``` r
+reg_mlr_sub = lm(safisfaction ~ age + severity, patsatisfaction_data)
+summary(reg_mlr_sub)
+```
+
+    ## 
+    ## Call:
+    ## lm(formula = safisfaction ~ age + severity, data = patsatisfaction_data)
+    ## 
+    ## Residuals:
+    ##      Min       1Q   Median       3Q      Max 
+    ## -17.1662  -8.5462  -0.4595   7.1342  17.2364 
+    ## 
+    ## Coefficients:
+    ##             Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept) 156.6719    18.6396   8.405 1.27e-10 ***
+    ## age          -1.2677     0.2104  -6.026 3.35e-07 ***
+    ## severity     -0.9208     0.4349  -2.117   0.0401 *  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Residual standard error: 10.36 on 43 degrees of freedom
+    ## Multiple R-squared:  0.655,  Adjusted R-squared:  0.6389 
+    ## F-statistic: 40.81 on 2 and 43 DF,  p-value: 1.16e-10
+
+``` r
+anova(reg_mlr_sub, reg_mlr)
+```
+
+    ## Analysis of Variance Table
+    ## 
+    ## Model 1: safisfaction ~ age + severity
+    ## Model 2: safisfaction ~ age + severity + anxiety
+    ##   Res.Df    RSS Df Sum of Sq      F  Pr(>F)  
+    ## 1     43 4613.0                              
+    ## 2     42 4248.8  1    364.16 3.5997 0.06468 .
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+##### State the hypotheses, decision rule and conclusion.
+
+Ho: beta\_anxiety = 0
+
+Ha: beta\_anxiety != 0
+
+If the p-value is less than 0.05, we reject Ho and conclude that beta\_anxiety is not 0 and we can't drop the variable anxiety from the regression model. If not, we do not reject Ho and conclude that beta\_anxiety is 0 and we can drop the variable anxiety from the regression model.
+
+Since p-value is greater than 0.05, we don't reject Ho and conclude that beta\_anxiety is 0 and we can drop the variable anxiety from the regression model.

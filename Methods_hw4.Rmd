@@ -30,7 +30,7 @@ heartdisease_data %>%
   select(totalcost, ERvisits, age, complications, duration) %>%
   summary()
 ```
-?dplyr::select
+
 ##### Descriptive statistics for categorical variable of interest:
 
 ```{r}
@@ -159,9 +159,16 @@ patsatisfaction_data = readxl::read_excel("./data/PatSatisfaction.xlsx") %>%
 
 ```{r}
 Hmisc::rcorr(as.matrix(patsatisfaction_data))
+pairs(patsatisfaction_data)
 ```
 
 ##### Initial Findings
+
+* Satisfaction and age have the strong negative association. Satisfication has the moderately strong negative association with both severity and anxiety. 
+
+* Anxiety and severity have the moderately strong positive association, we might want to check **collinearity** later. 
+
+* Severity and age have the moderately strong positive association, which is the same as the association between anxiety and age.
 
 ### b)
 
@@ -174,14 +181,34 @@ summary(reg_mlr)
 
 ##### State the hypotheses, decision rule and conclusion.
 
+Ho: beta_age = beta_severity = beta_anxiety = 0
+
+Ha: at least one beta is not 0
+
+If the p-value is less than 0.05, we reject Ho and conclude that at least one beta is not 0 and there is a regression relation. If not, we do not reject Ho and conclude that beta_age = beta_severity = beta_anxiety = 0 and there is not a regression relation.
+
+Since p-value is far less than 0.05, we reject Ho and conclude that at least one beta is not 0 and there is a regression relation.
 
 ### c)
 
 ```{r}
-confint(reg_mlr, level = 0.95)
+confint(reg_mlr, level = 0.95) %>%
+  knitr::kable(digits = 1)
 ```
 
+* The 95% CI for beta_0 is (121.9, 195.1).
+
+* The 95% CI for beta_age is (-1.6, -0.7).
+
+* The 95% CI for beta_severity is (-1.4, 0.6).
+
+* The 95% CI for beta_anxiety is (-27.8, 0.9). 
+
 ##### Interpret the coefficient and 95% CI associated with `severity`.
+
+* The coefficient of `severity`: satisfaction will decrease by 0.442 units on average if severity increases by 1 unit adjusting age and anxiety constant.
+
+* We are 95% confident that satisfaction will differ between -1.4 units and 0.6 units on average if severity increases by 1 unit adjusting age and anxiety constant.
 
 ### d)
 
@@ -203,5 +230,26 @@ mean_Y_hat = function(dataset, x, y, n, conf.level = 0.95){
 }
 ```
 
-?dim
+##### Interpret
 
+
+### e)
+
+##### Test whether `anxiety` can be dropped from the regression model, given the other two covariates are retained.
+
+```{r}
+reg_mlr_sub = lm(safisfaction ~ age + severity, patsatisfaction_data)
+summary(reg_mlr_sub)
+
+anova(reg_mlr_sub, reg_mlr)
+```
+
+##### State the hypotheses, decision rule and conclusion.
+
+Ho: beta_anxiety = 0
+
+Ha: beta_anxiety != 0
+
+If the p-value is less than 0.05, we reject Ho and conclude that beta_anxiety is not 0 and we can't drop the variable anxiety from the regression model. If not, we do not reject Ho and conclude that beta_anxiety is 0 and we can drop the variable anxiety from the regression model.
+
+Since p-value is greater than 0.05, we don't reject Ho and conclude that beta_anxiety is 0 and we can drop the variable anxiety from the regression model.

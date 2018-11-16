@@ -96,10 +96,16 @@ new_heartdisease_data = heartdisease_data %>%
 
 #### Fit a simple linear regression between the original `totalcost` and predictor `ERvisits`.
 
+Ho: beta\_ERvisits = 0
+
+Ha: beta\_ERvisits != 0
+
+Model: totolcost = beta\_0 + beta\_ERvisits \* ERvisits
+
 ``` r
 ggplot(heartdisease_data, aes(x = ERvisits, y = totalcost)) +
   geom_point() +
-  geom_smooth(method = 'lm',formula = y~x)
+  geom_smooth(method = 'lm', formula = y~x)
 ```
 
 ![](Methods_hw4_files/figure-markdown_github/unnamed-chunk-8-1.png)
@@ -135,6 +141,12 @@ summary(reg_original_slr)
 -   We expect the total cost will increase $955.44 on average if the number of emergency room (ER) visits increase 1 more time.
 
 #### Fit a simple linear regression between the transformed `totalcost` and predictor `ERvisits`.
+
+Ho: beta\_ERvisits = 0
+
+Ha: beta\_ERvisits != 0
+
+Model: trans\_totolcost = beta\_0 + beta\_ERvisits \* ERvisits
 
 ``` r
 trans_heartdisease_data = heartdisease_data %>%
@@ -184,6 +196,12 @@ summary(reg_trans_slr)
 
 #### Fit a multiple linear regression with `comp_bin` and `ERvisits` as predictors.
 
+Ho: beta\_ERvisits = beta\_comp\_bin = 0
+
+Ha: at lease one beta is not 0
+
+Model: trans\_totolcost = beta\_0 + beta\_ERvisits \* ERvisits + beta\_comp\_bin \* comp\_bin
+
 ``` r
 reg_trans_mlr = lm(trans_totalcost ~ ERvisits + comp_bin, trans_heartdisease_data)
 summary(reg_trans_mlr)
@@ -212,6 +230,12 @@ summary(reg_trans_mlr)
 ##### I)
 
 ##### Test if `comp_bin` is an effect modifier of the relationship between `totalcost` and `ERvisits`.
+
+Ho: beta\_ERvisits = beta\_comp\_bin = beta\_ERvisits&comp\_bin = 0
+
+Ha: at lease one beta is not 0
+
+Model: trans\_totolcost = beta\_0 + beta\_ERvisits \* ERvisits + beta\_comp\_bin \* comp\_bin + beta\_ERvisits&comp\_bin \* ERvisits&comp\_bin
 
 ``` r
 reg_interaction = lm(trans_totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, trans_heartdisease_data)
@@ -254,6 +278,10 @@ Since the p-value of 'ERvisits:comp\_bin1' is greater than 0.05, `comp_bin` is n
 
 ##### Decide if `comp_bin` should be included along with ‘ERvisits.
 
+Ho: beta\_comp\_bin = 0
+
+Ha: beta\_comp\_bin != 0
+
 ``` r
 anova(reg_trans_slr, reg_trans_mlr)
 ```
@@ -277,6 +305,12 @@ anova(reg_trans_slr, reg_trans_mlr)
 ##### I)
 
 ##### Use the model in part e) and add additional covariates and fit MLR.
+
+Ho: beta\_ERvisits = beta\_comp\_bin = beta\_age = beta\_gender = beta\_duration = 0
+
+Ha: at lease one beta is not 0
+
+Model: trans\_totolcost = beta\_0 + beta\_ERvisits \* ERvisits + beta\_comp\_bin \* comp\_bin + beta\_age \* age + beta\_gender \* gender + beta\_duration \* duration
 
 ``` r
 full_model = lm(trans_totalcost ~ ERvisits + comp_bin + age + gender + duration, trans_heartdisease_data)
@@ -316,6 +350,10 @@ summary(full_model)
 -   27% of the variation of the transformed `totalcost` around its mean can be explained by the multiple linear regression model.
 
 ##### II)
+
+Ho: beta\_comp\_bin = beta\_age = beta\_gender = beta\_duration = 0
+
+Ha: at lease one beta is not 0
 
 ``` r
 anova(reg_trans_slr, full_model)
@@ -386,6 +424,12 @@ pairs(patsatisfaction_data)
 ### b)
 
 ##### Fit a multiple regression model and test whether there is a regression relation and test whether there is a regression relation.
+
+Ho: beta\_age = beta\_severity = beta\_anxiety = 0
+
+Ha: at lease one beta is not 0
+
+Model: satification = beta\_0 + beta\_age \* age + beta\_severity \* severity + beta\_anxiety \* anxiety
 
 ``` r
 reg_mlr = lm(safisfaction ~ age + severity + anxiety, patsatisfaction_data)
@@ -463,6 +507,10 @@ predict(reg_mlr, input_data, interval = "predict")
     ##        fit      lwr      upr
     ## 1 71.68332 50.06237 93.30426
 
+(beta\_0 + beta\_age \* age + beta\_severity \* severity + beta\_anxiety \* anxiety) +- t(alpha, n - 2) \* sqrt(MSE(1 + 1/n + (xh - xbar)^2 / sum((xi - xbar)^2)))
+
+After pluging in the value, we have 95% prediction CI (50, 93).
+
 ##### Interpret
 
 We are 95% confident that the next new satisfaction observation with age = 35, severity = 42, and anxiety = 2.1 is between 50 and 93.
@@ -470,6 +518,20 @@ We are 95% confident that the next new satisfaction observation with age = 35, s
 ### e)
 
 ##### Test whether `anxiety` can be dropped from the regression model, given the other two covariates are retained.
+
+For linear model:
+
+Ho: beta\_age = beta\_age = beta\_severity = 0
+
+Ha: at least one beta is not 0
+
+Model: safisfaction = beta\_0 + beta\_age \* age + beta\_severity \* severity
+
+For ANOVA model:
+
+Ho: beta\_anxiety = 0
+
+Ha: beta\_anxiety != 0
 
 ``` r
 reg_mlr_sub = lm(safisfaction ~ age + severity, patsatisfaction_data)

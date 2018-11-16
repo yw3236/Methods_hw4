@@ -28,14 +28,16 @@ The main outcome is `totalcost` of patients diagnosed with heart disease. The ma
 ```{r}
 heartdisease_data %>%
   select(totalcost, ERvisits, age, complications, duration) %>%
-  summary()
+  summary() %>%
+  knitr::kable(digits = 1)
 ```
 
 ##### Descriptive statistics for categorical variable of interest:
 
 ```{r}
-table(factor(heartdisease_data$gender, levels = c(0, 1), labels = c('Male', 'Female'))) %>%
-  addmargins()
+table(factor(heartdisease_data$gender, levels = c(1, 0), labels = c('Male', 'Female'))) %>%
+  addmargins() %>%
+  knitr::kable(digits = 1)
 ```
 
 ### b)
@@ -77,13 +79,18 @@ summary(reg_original_slr)
 
 ##### Comments on significance and interpretation of the slope: 
 
+* From the p-value of the F test, we can conclude that the test is significant and there is a linear relationship between `totalcost` and `ERvisits`, and `ERvisits` is a significant predictor of `totalcost`. But only 14% of variation of `totalcost` around its mean can be explained by the model.
+
+* We expect the total cost will increase $955.44 on average if the number of emergency room (ER) visits increase 1 more time.
 
 #### Fit a simple linear regression between the transformed `totalcost` and predictor `ERvisits`.
 
 ```{r}
 trans_heartdisease_data = heartdisease_data %>%
   filter(totalcost != 0) %>%
-  mutate(trans_totalcost = log(totalcost)) 
+  mutate(trans_totalcost = log(totalcost)) %>%
+  mutate(comp_bin = as.factor(ifelse(complications == 0, 0, 1))) %>%
+  mutate(gender = as.factor(gender))
 
 ggplot(trans_heartdisease_data, aes(x = ERvisits, y = trans_totalcost)) +
   geom_point() +
@@ -95,13 +102,17 @@ summary(reg_trans_slr)
 
 ##### Comments on significance and interpretation of the slope: 
 
-### c)
+* From the p-value of the F test, we can conclude that the test is significant and there is a linear relationship between the transformed `totalcost` and `ERvisits`, and `ERvisits` is a significant predictor of the transformed `totalcost`. But only 10% of variation of the transformed `totalcost` around its mean can be explained by the model.
+
+* We expect the total cost will increase exp(0.23 + 5.54) = $321 on average if the number of emergency room (ER) visits increase 1 more time.
+
+### e)
 
 #### Fit a multiple linear regression with `comp_bin` and `ERvisits` as predictors.
 
 ```{r}
-reg_original_mlr = lm(totalcost ~ ERvisits + comp_bin, new_heartdisease_data)
-summary(reg_original_mlr)
+reg_trans_mlr = lm(trans_totalcost ~ ERvisits + comp_bin, trans_heartdisease_data)
+summary(reg_trans_mlr)
 ```
 
 ##### I)
@@ -109,23 +120,31 @@ summary(reg_original_mlr)
 ##### Test if `comp_bin` is an effect modifier of the relationship between `totalcost` and `ERvisits`. 
 
 ```{r}
-reg_interaction = lm(totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, new_heartdisease_data)
+reg_interaction = lm(trans_totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, trans_heartdisease_data)
 summary(reg_interaction)
 ```
 
 ##### Comment
 
+Since the p-value of 'ERvisits:comp_bin1' is greater than 0.05, `comp_bin` is not an effect modifier of the relationship between `totalcost` and `ERvisits`
+
 ##### II)
 
 ##### Test if `comp_bin` is a confounder of the relationship between `totalcost` and `ERvisits`. 
 
-```{r}
-
-```
-
-##### Comment
+|beta_ERvisits_slr - beta_ERvisits_mlr| / beta_ERvisits_slr = |0.23 - 0.20| / 0.23 = 0.13, which is greater than 10%, so `comp_bin` is a confounder of the relationship between `totalcost` and `ERvisits`.
 
 ##### III)
+
+##### Decide if `comp_bin` should be included along with ‘ERvisits.
+
+```{r}
+anova(reg_trans_slr, reg_trans_mlr)
+```
+
+##### Reason 
+
+`comp_bin` should be included along with ‘ERvisits because the p-value of the F test is less than 0.05 and it indicates that beta_camp_bin is not equal to 0 and `comp_bin` is significant to predict `totalcost`.
 
 ### f)
 
@@ -134,17 +153,29 @@ summary(reg_interaction)
 #####  Use the model in part e) and add additional covariates and fit MLR.
 
 ```{r}
-full_model = lm(totalcost ~ ERvisits + comp_bin + age + gender + duration, new_heartdisease_data)
+full_model = lm(trans_totalcost ~ ERvisits + comp_bin + age + gender + duration, trans_heartdisease_data)
 summary(full_model)
 ```
 
 ##### Comment
 
+* From the p-value of the F test, we can conclude that the test is significant and there is a linear relationship between the transformed `totalcost` and `ERvisits`, `comp_bin`, `age`, `gender`, `duration`.
+
+* `ERvisits`, `comp_bin`, `age`, and `duration` are significant predictors of the transformed `totalcost`. But `gender` is not significant predictors of the transformed `totalcost`.
+
+* 27% of the variation of the transformed `totalcost` around its mean can be explained by the multiple linear regression model.
+
 ##### II)
 
 ```{r}
-anova(reg_original_slr, full_model)
+anova(reg_trans_slr, full_model)
 ```
+
+I should use MLR than SLR because:
+
+* More variation of the transformed `totalcost` around its mean can be explained by the multiple linear regression model.
+
+* Since the p-value of F test is less than 0.05, there is at least one beta not equal to 0 among beta_camp_bin, beta_age, beta_gender, and beta_duration.
 
 # Problem 3
 

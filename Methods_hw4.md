@@ -37,34 +37,32 @@ The main outcome is `totalcost` of patients diagnosed with heart disease. The ma
 ``` r
 heartdisease_data %>%
   select(totalcost, ERvisits, age, complications, duration) %>%
-  summary()
+  summary() %>%
+  knitr::kable(digits = 1)
 ```
 
-    ##    totalcost          ERvisits           age        complications    
-    ##  Min.   :    0.0   Min.   : 0.000   Min.   :24.00   Min.   :0.00000  
-    ##  1st Qu.:  161.1   1st Qu.: 2.000   1st Qu.:55.00   1st Qu.:0.00000  
-    ##  Median :  507.2   Median : 3.000   Median :60.00   Median :0.00000  
-    ##  Mean   : 2800.0   Mean   : 3.425   Mean   :58.72   Mean   :0.05711  
-    ##  3rd Qu.: 1905.5   3rd Qu.: 5.000   3rd Qu.:64.00   3rd Qu.:0.00000  
-    ##  Max.   :52664.9   Max.   :20.000   Max.   :70.00   Max.   :3.00000  
-    ##     duration     
-    ##  Min.   :  0.00  
-    ##  1st Qu.: 41.75  
-    ##  Median :165.50  
-    ##  Mean   :164.03  
-    ##  3rd Qu.:281.00  
-    ##  Max.   :372.00
+|     |    totalcost    |    ERvisits    |      age      | complications   |    duration    |
+|-----|:---------------:|:--------------:|:-------------:|:----------------|:--------------:|
+|     |    Min. : 0.0   |  Min. : 0.000  |  Min. :24.00  | Min. :0.00000   |   Min. : 0.00  |
+|     |  1st Qu.: 161.1 | 1st Qu.: 2.000 | 1st Qu.:55.00 | 1st Qu.:0.00000 | 1st Qu.: 41.75 |
+|     |  Median : 507.2 | Median : 3.000 | Median :60.00 | Median :0.00000 | Median :165.50 |
+|     |  Mean : 2800.0  |  Mean : 3.425  |  Mean :58.72  | Mean :0.05711   |  Mean :164.03  |
+|     | 3rd Qu.: 1905.5 | 3rd Qu.: 5.000 | 3rd Qu.:64.00 | 3rd Qu.:0.00000 | 3rd Qu.:281.00 |
+|     |  Max. :52664.9  |  Max. :20.000  |  Max. :70.00  | Max. :3.00000   |  Max. :372.00  |
 
 ##### Descriptive statistics for categorical variable of interest:
 
 ``` r
-table(factor(heartdisease_data$gender, levels = c(0, 1), labels = c('Male', 'Female'))) %>%
-  addmargins()
+table(factor(heartdisease_data$gender, levels = c(1, 0), labels = c('Male', 'Female'))) %>%
+  addmargins() %>%
+  knitr::kable(digits = 1)
 ```
 
-    ## 
-    ##   Male Female    Sum 
-    ##    608    180    788
+| Var1   |  Freq|
+|:-------|-----:|
+| Male   |   180|
+| Female |   608|
+| Sum    |   788|
 
 ### b)
 
@@ -132,12 +130,18 @@ summary(reg_original_slr)
 
 ##### Comments on significance and interpretation of the slope:
 
+-   From the p-value of the F test, we can conclude that the test is significant and there is a linear relationship between `totalcost` and `ERvisits`, and `ERvisits` is a significant predictor of `totalcost`. But only 14% of variation of `totalcost` around its mean can be explained by the model.
+
+-   We expect the total cost will increase $955.44 on average if the number of emergency room (ER) visits increase 1 more time.
+
 #### Fit a simple linear regression between the transformed `totalcost` and predictor `ERvisits`.
 
 ``` r
 trans_heartdisease_data = heartdisease_data %>%
   filter(totalcost != 0) %>%
-  mutate(trans_totalcost = log(totalcost)) 
+  mutate(trans_totalcost = log(totalcost)) %>%
+  mutate(comp_bin = as.factor(ifelse(complications == 0, 0, 1))) %>%
+  mutate(gender = as.factor(gender))
 
 ggplot(trans_heartdisease_data, aes(x = ERvisits, y = trans_totalcost)) +
   geom_point() +
@@ -172,75 +176,101 @@ summary(reg_trans_slr)
 
 ##### Comments on significance and interpretation of the slope:
 
-### c)
+-   From the p-value of the F test, we can conclude that the test is significant and there is a linear relationship between the transformed `totalcost` and `ERvisits`, and `ERvisits` is a significant predictor of the transformed `totalcost`. But only 10% of variation of the transformed `totalcost` around its mean can be explained by the model.
+
+-   We expect the total cost will increase exp(0.23 + 5.54) = $321 on average if the number of emergency room (ER) visits increase 1 more time.
+
+### e)
 
 #### Fit a multiple linear regression with `comp_bin` and `ERvisits` as predictors.
 
 ``` r
-reg_original_mlr = lm(totalcost ~ ERvisits + comp_bin, new_heartdisease_data)
-summary(reg_original_mlr)
+reg_trans_mlr = lm(trans_totalcost ~ ERvisits + comp_bin, trans_heartdisease_data)
+summary(reg_trans_mlr)
 ```
 
     ## 
     ## Call:
-    ## lm(formula = totalcost ~ ERvisits + comp_bin, data = new_heartdisease_data)
+    ## lm(formula = trans_totalcost ~ ERvisits + comp_bin, data = trans_heartdisease_data)
     ## 
     ## Residuals:
-    ##    Min     1Q Median     3Q    Max 
-    ## -14631  -2183   -993    218  42351 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -6.0741 -1.0737 -0.0181  1.1810  4.3848 
     ## 
     ## Coefficients:
     ##             Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)  -511.90     358.65  -1.427    0.154    
-    ## ERvisits      902.26      83.93  10.750  < 2e-16 ***
-    ## comp_bin1    4058.94     973.98   4.167 3.42e-05 ***
+    ## (Intercept)   5.5211     0.1013  54.495  < 2e-16 ***
+    ## ERvisits      0.2046     0.0237   8.633  < 2e-16 ***
+    ## comp_bin1     1.6859     0.2749   6.132 1.38e-09 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 6138 on 785 degrees of freedom
-    ## Multiple R-squared:  0.1604, Adjusted R-squared:  0.1583 
-    ## F-statistic: 75.01 on 2 and 785 DF,  p-value: < 2.2e-16
+    ## Residual standard error: 1.732 on 782 degrees of freedom
+    ## Multiple R-squared:  0.1437, Adjusted R-squared:  0.1416 
+    ## F-statistic: 65.64 on 2 and 782 DF,  p-value: < 2.2e-16
 
 ##### I)
 
 ##### Test if `comp_bin` is an effect modifier of the relationship between `totalcost` and `ERvisits`.
 
 ``` r
-reg_interaction = lm(totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, new_heartdisease_data)
+reg_interaction = lm(trans_totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, trans_heartdisease_data)
 summary(reg_interaction)
 ```
 
     ## 
     ## Call:
-    ## lm(formula = totalcost ~ ERvisits + comp_bin + ERvisits * comp_bin, 
-    ##     data = new_heartdisease_data)
+    ## lm(formula = trans_totalcost ~ ERvisits + comp_bin + ERvisits * 
+    ##     comp_bin, data = trans_heartdisease_data)
     ## 
     ## Residuals:
-    ##    Min     1Q Median     3Q    Max 
-    ## -14938  -2177   -977    256  42338 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -6.0852 -1.0802 -0.0078  1.1898  4.3803 
     ## 
     ## Coefficients:
     ##                    Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)          -573.2      366.4  -1.564  0.11814    
-    ## ERvisits              920.7       86.9  10.594  < 2e-16 ***
-    ## comp_bin1            5430.0     1935.0   2.806  0.00514 ** 
-    ## ERvisits:comp_bin1   -275.6      336.1  -0.820  0.41243    
+    ## (Intercept)         5.49899    0.10349  53.138  < 2e-16 ***
+    ## ERvisits            0.21125    0.02453   8.610  < 2e-16 ***
+    ## comp_bin1           2.17969    0.54604   3.992 7.17e-05 ***
+    ## ERvisits:comp_bin1 -0.09927    0.09483  -1.047    0.296    
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 6139 on 784 degrees of freedom
-    ## Multiple R-squared:  0.1612, Adjusted R-squared:  0.158 
-    ## F-statistic: 50.21 on 3 and 784 DF,  p-value: < 2.2e-16
+    ## Residual standard error: 1.732 on 781 degrees of freedom
+    ## Multiple R-squared:  0.1449, Adjusted R-squared:  0.1417 
+    ## F-statistic: 44.13 on 3 and 781 DF,  p-value: < 2.2e-16
 
 ##### Comment
+
+Since the p-value of 'ERvisits:comp\_bin1' is greater than 0.05, `comp_bin` is not an effect modifier of the relationship between `totalcost` and `ERvisits`
 
 ##### II)
 
 ##### Test if `comp_bin` is a confounder of the relationship between `totalcost` and `ERvisits`.
 
-##### Comment
+|beta\_ERvisits\_slr - beta\_ERvisits\_mlr| / beta\_ERvisits\_slr = |0.23 - 0.20| / 0.23 = 0.13, which is greater than 10%, so `comp_bin` is a confounder of the relationship between `totalcost` and `ERvisits`.
 
 ##### III)
+
+##### Decide if `comp_bin` should be included along with ‘ERvisits.
+
+``` r
+anova(reg_trans_slr, reg_trans_mlr)
+```
+
+    ## Analysis of Variance Table
+    ## 
+    ## Model 1: trans_totalcost ~ ERvisits
+    ## Model 2: trans_totalcost ~ ERvisits + comp_bin
+    ##   Res.Df    RSS Df Sum of Sq      F    Pr(>F)    
+    ## 1    783 2459.8                                  
+    ## 2    782 2347.0  1    112.84 37.598 1.379e-09 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+##### Reason
+
+`comp_bin` should be included along with ‘ERvisits because the p-value of the F test is less than 0.05 and it indicates that beta\_camp\_bin is not equal to 0 and `comp_bin` is significant to predict `totalcost`.
 
 ### f)
 
@@ -249,51 +279,63 @@ summary(reg_interaction)
 ##### Use the model in part e) and add additional covariates and fit MLR.
 
 ``` r
-full_model = lm(totalcost ~ ERvisits + comp_bin + age + gender + duration, new_heartdisease_data)
+full_model = lm(trans_totalcost ~ ERvisits + comp_bin + age + gender + duration, trans_heartdisease_data)
 summary(full_model)
 ```
 
     ## 
     ## Call:
-    ## lm(formula = totalcost ~ ERvisits + comp_bin + age + gender + 
-    ##     duration, data = new_heartdisease_data)
+    ## lm(formula = trans_totalcost ~ ERvisits + comp_bin + age + gender + 
+    ##     duration, data = trans_heartdisease_data)
     ## 
     ## Residuals:
-    ##    Min     1Q Median     3Q    Max 
-    ## -13262  -2391   -977    591  40793 
+    ##     Min      1Q  Median      3Q     Max 
+    ## -5.0823 -1.0555 -0.1352  0.9533  4.3462 
     ## 
     ## Coefficients:
-    ##              Estimate Std. Error t value Pr(>|t|)    
-    ## (Intercept)  4104.112   1903.052   2.157 0.031341 *  
-    ## ERvisits      892.281     84.166  10.601  < 2e-16 ***
-    ## comp_bin1    3708.979    963.774   3.848 0.000129 ***
-    ## age           -93.729     32.343  -2.898 0.003861 ** 
-    ## gender1     -1022.046    517.144  -1.976 0.048469 *  
-    ## duration        7.159      1.823   3.928 9.33e-05 ***
+    ##               Estimate Std. Error t value Pr(>|t|)    
+    ## (Intercept)  6.0449619  0.5063454  11.938  < 2e-16 ***
+    ## ERvisits     0.1757486  0.0223189   7.874 1.15e-14 ***
+    ## comp_bin1    1.4921110  0.2554883   5.840 7.65e-09 ***
+    ## age         -0.0221376  0.0086023  -2.573   0.0103 *  
+    ## gender1     -0.1176181  0.1379809  -0.852   0.3942    
+    ## duration     0.0055406  0.0004848  11.428  < 2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
     ## 
-    ## Residual standard error: 6055 on 782 degrees of freedom
-    ## Multiple R-squared:  0.1862, Adjusted R-squared:  0.181 
-    ## F-statistic: 35.78 on 5 and 782 DF,  p-value: < 2.2e-16
+    ## Residual standard error: 1.605 on 779 degrees of freedom
+    ## Multiple R-squared:  0.268,  Adjusted R-squared:  0.2633 
+    ## F-statistic: 57.03 on 5 and 779 DF,  p-value: < 2.2e-16
 
 ##### Comment
+
+-   From the p-value of the F test, we can conclude that the test is significant and there is a linear relationship between the transformed `totalcost` and `ERvisits`, `comp_bin`, `age`, `gender`, `duration`.
+
+-   `ERvisits`, `comp_bin`, `age`, and `duration` are significant predictors of the transformed `totalcost`. But `gender` is not significant predictors of the transformed `totalcost`.
+
+-   27% of the variation of the transformed `totalcost` around its mean can be explained by the multiple linear regression model.
 
 ##### II)
 
 ``` r
-anova(reg_original_slr, full_model)
+anova(reg_trans_slr, full_model)
 ```
 
     ## Analysis of Variance Table
     ## 
-    ## Model 1: totalcost ~ ERvisits
-    ## Model 2: totalcost ~ ERvisits + comp_bin + age + gender + duration
-    ##   Res.Df        RSS Df  Sum of Sq      F    Pr(>F)    
-    ## 1    786 3.0228e+10                                   
-    ## 2    782 2.8668e+10  4 1560105852 10.639 2.127e-08 ***
+    ## Model 1: trans_totalcost ~ ERvisits
+    ## Model 2: trans_totalcost ~ ERvisits + comp_bin + age + gender + duration
+    ##   Res.Df    RSS Df Sum of Sq      F    Pr(>F)    
+    ## 1    783 2459.8                                  
+    ## 2    779 2006.5  4     453.3 43.996 < 2.2e-16 ***
     ## ---
     ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+I should use MLR than SLR because:
+
+-   More variation of the transformed `totalcost` around its mean can be explained by the multiple linear regression model.
+
+-   Since the p-value of F test is less than 0.05, there is at least one beta not equal to 0 among beta\_camp\_bin, beta\_age, beta\_gender, and beta\_duration.
 
 Problem 3
 =========

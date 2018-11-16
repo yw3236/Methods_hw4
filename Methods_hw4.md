@@ -521,7 +521,7 @@ We are 95% confident that the next new satisfaction observation with age = 35, s
 
 For linear model:
 
-Ho: beta\_age = beta\_age = beta\_severity = 0
+Ho: beta\_age = beta\_severity = 0
 
 Ha: at least one beta is not 0
 
